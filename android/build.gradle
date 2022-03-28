@@ -1,0 +1,130 @@
+def safeExtGet(prop, fallback) {
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+def getProperty(key) {
+    project.properties.get(key)
+}
+
+apply plugin: 'com.android.library'
+// apply plugin: 'kotlin-android'
+
+buildscript {
+    // buildscript is executed before everything
+    def kotlinVersion = rootProject.ext.has('kotlinVersion') ? rootProject.ext.get('kotlinVersion') : project.properties.get('library_kotlinVersion')
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // This should reflect the Gradle plugin version used by
+        // the minimum React Native version supported.
+        classpath "com.android.tools.build:gradle:4.2.2"
+        // classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+    }
+}
+
+def nodemodulesDir = "${rootProject.projectDir}/../node_modules"
+def reactnativeDir = "${nodemodulesDir}/react-native"
+
+
+android {
+    compileSdkVersion safeExtGet('compileSdkVersion', getProperty('library_compileSdkVersion'))
+    buildToolsVersion safeExtGet('buildToolsVersion', getProperty('library_buildToolsVersion'))
+    defaultConfig {
+        minSdkVersion safeExtGet('minSdkVersion', getProperty('library_minSdkVersion'))
+        targetSdkVersion safeExtGet('targetSdkVersion', getProperty('library_targetSdkVersion'))
+        versionCode 1
+        versionName "1.0"
+        externalNativeBuild {
+            cmake {
+                arguments "-DNODEMODULES_DIR=${nodemodulesDir}"
+                abiFilters "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
+                cppFlags "-fexceptions", "-frtti", "-std=c++14", "-DONANDROID"
+            }
+        }
+    }
+    // externalNativeBuild {
+    //     cmake {
+    //         path "./CMakeLists.txt"
+    //     }
+    // }
+//    packagingOptions {
+//        excludes = ["**/libc++_shared.so", "**/libfbjni.so", "**/libreactnativejni.so", "**/libjsi.so", "**/MANIFEST.MF"]
+//    }
+    lintOptions {
+        abortOnError false
+    }
+
+    configurations {
+        // extractHeaders
+    }
+    dependencies {
+        // extractHeaders "com.facebook.fbjni:fbjni:+:headers"
+    }
+}
+
+repositories {
+    maven {
+        // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+        url("$rootDir/../node_modules/react-native/android")
+    }
+    maven {
+        // Android JSC is installed from npm
+        url("$rootDir/../node_modules/jsc-android/dist")
+    }
+    mavenCentral {
+        // We don't want to fetch react-native from Maven Central as there are
+        // older versions over there.
+        content {
+            excludeGroup "com.facebook.react"
+        }
+    }
+    google()
+    maven { url 'https://www.jitpack.io' }
+}
+
+def kotlinVersion = safeExtGet('kotlinVersion', getProperty('library_kotlinVersion'))
+dependencies {
+    //noinspection GradleDynamicVersion
+    implementation "com.facebook.react:react-native:+"  // From node_modules
+    // implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    // implementation "com.squareup.okhttp3:okhttp:4.9.3"
+    // implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0"
+}
+task extractAARHeaders {
+    doLast {
+        configurations.extractHeaders.files.each {
+            def file = it.absoluteFile
+            copy {
+                from zipTree(file)
+                into "$buildDir/$file.name"
+                include "**/*.h"
+            }
+        }
+    }
+}
+task extractRNLibs {
+    def aarfile = null
+    fileTree("${reactnativeDir}/android").matching {
+        include "**/**/*.aar"
+    }.forEach {
+        aarfile = it
+    }
+    if (aarfile != null) {
+        copy {
+            from(zipTree(aarfile)) {
+                include "jni/**"
+            }
+            into "${buildDir}/react-native-libs"
+        }
+    } else {
+        throw new FileNotFoundException("react native aar file is not found")
+    }
+}
+
+tasks.whenTaskAdded { task ->
+    if(task.name.contains('generateJsonModel')) {
+        // task.dependsOn(extractAARHeaders)
+        // task.dependsOn(extractRNLibs)
+    }
+}

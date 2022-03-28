@@ -1,0 +1,40 @@
+{
+  "name": "react-native-powpow-settings",
+  "title": "React Native Powpow Settings",
+  "version": "1.0.0",
+  "description": "orientation、volume、brightness",
+  "main": "index.js",
+  "files": [
+    "README.md",
+    "android",
+    "index.ts",
+    "ios",
+    "react-native-powpow-settings.podspec"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yaaliuzhipeng/react-native-powpow-settings.git",
+    "baseUrl": "https://github.com/yaaliuzhipeng/react-native-powpow-settings"
+  },
+  "keywords": [
+    "react-native"
+  ],
+  "author": {
+    "name": "yaaliuzhipeng",
+    "email": "yaaliuzhipeng@outlook.com"
+  },
+  "license": "MIT",
+  "licenseFilename": "LICENSE",
+  "readmeFilename": "README.md",
+  "peerDependencies": {
+    "react": ">=16.8.1",
+    "react-native": ">=0.64.0-rc.0 <1.0.x"
+  },
+  "devDependencies": {
+    "react": "^16.9.0",
+    "react-native": "^0.67.0"
+  }
+}
